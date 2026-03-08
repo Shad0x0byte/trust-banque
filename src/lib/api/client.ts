@@ -1,16 +1,6 @@
 // src/lib/api/client.ts
-// Central API client for all backend requests.
-//
-// ── Deployment notes ─────────────────────────────────────────────────────
-// LOCAL:  VITE_API_URL=http://localhost/banking-api/public/api  (in .env)
-// DEPLOY: VITE_API_URL=https://yourdomain.com/api               (in .env)
-//
-// Never hardcode URLs here — always use the env variable.
-// ─────────────────────────────────────────────────────────────────────────
-
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost/banking-api/public/api';
 
-// ── Generic response wrapper ──────────────────────────────────────────────
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -19,37 +9,34 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
-// ── Token helpers ─────────────────────────────────────────────────────────
-
-/** Read JWT from localStorage (safe to call server-side — returns null). */
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('auth_token');
 }
 
-/** Build standard request headers, injecting Bearer token if present. */
 function buildHeaders(extra: Record<string, string> = {}): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...extra,
   };
   const token = getToken();
-  if (token) {
-    // Send in both headers: Authorization for standard setups,
-    // X-Auth-Token as fallback because some nginx configs strip Authorization.
-    headers['Authorization'] = `Bearer ${token}`;
-    headers['X-Auth-Token'] = token;
-  }
+  // Still send Authorization header for environments that support it
+  if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;
 }
 
-// ── Response handler ──────────────────────────────────────────────────────
-
 /**
- * Parse an HTTP response into ApiResponse<T>.
- * A non-2xx status means success=false; we still try to read the body for
- * the server's error message.
+ * Appends ?_token=xxx to the URL.
+ * This is the reliable fallback for nginx/cPanel hosts that strip
+ * the Authorization header before PHP sees it.
  */
+function appendToken(endpoint: string): string {
+  const token = getToken();
+  if (!token) return endpoint;
+  const separator = endpoint.includes('?') ? '&' : '?';
+  return `${endpoint}${separator}_token=${encodeURIComponent(token)}`;
+}
+
 async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   let data: any;
   try {
@@ -74,18 +61,13 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   };
 }
 
-// ── Core request function ─────────────────────────────────────────────────
-
-/**
- * Make an authenticated fetch request to the API.
- * Use this everywhere instead of raw fetch() to keep headers consistent.
- */
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   try {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
+    const url = `${API_BASE}${appendToken(endpoint)}`;
+    const response = await fetch(url, {
       ...options,
       headers: buildHeaders(options.headers as Record<string, string>),
     });
@@ -152,7 +134,6 @@ export const updateCardSettings = (cardId: number, settings: Record<string, unkn
 
 // ── Transfers ─────────────────────────────────────────────────────────────
 
-/** Internal transfer: both from_account and to_account must belong to this user. */
 export const initiateInternalTransfer = (data: {
   from_account_id: number;
   to_account_id:   number;
@@ -164,7 +145,6 @@ export const initiateInternalTransfer = (data: {
     body:   JSON.stringify(data),
   });
 
-/** External/wire transfer: debits sender only; recipient is at another bank. */
 export const initiateExternalTransfer = (data: {
   from_account_id: number;
   recipient_name:  string;
@@ -196,44 +176,33 @@ export const changePassword = (currentPassword: string, newPassword: string) =>
 
 // ── Admin ─────────────────────────────────────────────────────────────────
 
-/** Admin dashboard overview stats. */
 export const getAdminDashboard = () =>
   apiRequest('/admin/dashboard.php', { method: 'GET' });
 
-/** List all users. */
 export const getAllUsers = () =>
   apiRequest('/admin/users.php', { method: 'GET' });
 
-/** Get a single user's full detail (accounts + transactions + stats). */
 export const getAdminUserDetail = (userId: number) =>
   apiRequest(`/admin/user_detail.php?user_id=${userId}`, { method: 'GET' });
 
-/** Create a new user (admin only). */
 export const createUser = (userData: Record<string, unknown>) =>
   apiRequest('/admin/create_user.php', {
     method: 'POST',
     body:   JSON.stringify(userData),
   });
 
-/** Update any field(s) on a user record. */
 export const updateUser = (userId: number, userData: Record<string, unknown>) =>
   apiRequest('/admin/user_update.php', {
     method: 'POST',
     body:   JSON.stringify({ user_id: userId, ...userData }),
   });
 
-/** Permanently delete a user and all their data. */
 export const deleteUser = (userId: number) =>
   apiRequest('/admin/user_delete.php', {
     method: 'POST',
     body:   JSON.stringify({ user_id: userId }),
   });
 
-/**
- * Adjust or set an account balance + create a matching transaction.
- * mode='set'    → sets the balance to the exact amount
- * mode='adjust' → adds/subtracts the delta (negative = debit)
- */
 export const adminBalanceAdjust = (data: {
   account_id:   number;
   mode:         'set' | 'adjust';
@@ -248,15 +217,12 @@ export const adminBalanceAdjust = (data: {
     body:   JSON.stringify(data),
   });
 
-/** Get all cards (optionally filter by user_id). */
 export const getAdminCards = (userId?: number) =>
   apiRequest(`/admin/cards.php${userId ? `?user_id=${userId}` : ''}`, { method: 'GET' });
 
-/** Get admin/security/error logs. */
 export const getAdminLogs = (type: 'admin' | 'security' | 'error', page = 1, limit = 50) =>
   apiRequest(`/admin/logs.php?type=${type}&page=${page}&limit=${limit}`, { method: 'GET' });
 
-/** Get all transactions (admin view). */
 export const getAdminTransactions = (filters?: Record<string, unknown>) => {
   const params = new URLSearchParams();
   if (filters)
