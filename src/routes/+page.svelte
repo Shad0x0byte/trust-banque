@@ -111,10 +111,10 @@
         <span class="flex items-center gap-2"><span class="text-emerald-400">✓</span> 256-bit SSL Encryption</span>
         <span class="flex items-center gap-2"><span class="text-emerald-400">✓</span> No credit check required</span>
       </div>
-      <div class="grid grid-cols-3 gap-8 border-t border-white/10 pt-10 max-w-xl mx-auto">
-        <div><p class="text-4xl font-bold text-emerald-400">2M+</p><p class="mt-1 text-sm text-slate-400">Customers</p></div>
-        <div><p class="text-4xl font-bold text-emerald-400">$5B+</p><p class="mt-1 text-sm text-slate-400">Assets Secured</p></div>
-        <div><p class="text-4xl font-bold text-emerald-400">99.9%</p><p class="mt-1 text-sm text-slate-400">Uptime SLA</p></div>
+      <div class="grid grid-cols-3 gap-4 border-t border-white/10 pt-10 max-w-xl mx-auto">
+        <div class="text-center px-1"><p class="text-2xl sm:text-4xl font-bold text-emerald-400">2M+</p><p class="mt-1 text-xs sm:text-sm text-slate-400">Customers</p></div>
+        <div class="text-center px-1"><p class="text-2xl sm:text-4xl font-bold text-emerald-400">$5B+</p><p class="mt-1 text-xs sm:text-sm text-slate-400">Assets Secured</p></div>
+        <div class="text-center px-1"><p class="text-2xl sm:text-4xl font-bold text-emerald-400">99.9%</p><p class="mt-1 text-xs sm:text-sm text-slate-400">Uptime SLA</p></div>
       </div>
     </div>
   </section>
