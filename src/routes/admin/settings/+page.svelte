@@ -116,29 +116,5 @@
       </div>
     </div>
 
-    <!-- Deployment Checklist -->
-    <div class="lg:col-span-2 rounded-2xl border border-amber-200 bg-amber-50 p-6">
-      <h3 class="text-lg font-bold text-amber-900 mb-4 flex items-center gap-2">
-        🚀 Deployment Checklist
-      </h3>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-amber-800">
-        {#each [
-          ['Change JWT_SECRET in .env to a long random string (32+ chars)', false],
-          ['Set CORS_ORIGIN in .env to your Vercel domain (e.g. https://app.trustbanque.com)', false],
-          ['Set VITE_API_URL in frontend .env to your production API URL', false],
-          ['Set APP_ENV=production in backend .env', false],
-          ['Enable HTTPS on your shared host (free via Let\'s Encrypt / cPanel)', false],
-          ['Remove or restrict hashgen.php and test.php from /public', false],
-          ['Run schema.sql then seed_demo_data.sql in phpMyAdmin', true],
-          ['Test login, transfer, and admin panel end-to-end', false],
-        ] as [item, done]}
-          <div class="flex items-start gap-2">
-            <span class="{done ? 'text-emerald-600' : 'text-amber-500'}">{done ? '✓' : '○'}</span>
-            <p>{item}</p>
-          </div>
-        {/each}
-      </div>
-    </div>
-
   </div>
 </div>
