@@ -108,18 +108,18 @@
 
   <!-- Summary cards -->
   {#if !loading && transactions.length > 0}
-  <div class="grid grid-cols-3 gap-4">
-    <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-sm">
-      <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Transactions</p>
-      <p class="text-2xl font-bold text-slate-900">{filtered.length}</p>
+  <div class="grid grid-cols-3 gap-2 sm:gap-4">
+    <div class="rounded-2xl bg-white border border-slate-100 p-3 sm:p-5 shadow-sm min-w-0">
+      <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1 truncate">Transactions</p>
+      <p class="text-lg sm:text-2xl font-bold text-slate-900 truncate">{filtered.length}</p>
     </div>
-    <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-sm">
-      <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Money In</p>
-      <p class="text-2xl font-bold text-green-600">+{formatCurrency(totalCredit)}</p>
+    <div class="rounded-2xl bg-white border border-slate-100 p-3 sm:p-5 shadow-sm min-w-0">
+      <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1 truncate">Money In</p>
+      <p class="text-lg sm:text-2xl font-bold text-green-600 truncate">+{formatCurrency(totalCredit)}</p>
     </div>
-    <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-sm">
-      <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Money Out</p>
-      <p class="text-2xl font-bold text-slate-900">{formatCurrency(totalDebit)}</p>
+    <div class="rounded-2xl bg-white border border-slate-100 p-3 sm:p-5 shadow-sm min-w-0">
+      <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1 truncate">Money Out</p>
+      <p class="text-lg sm:text-2xl font-bold text-slate-900 truncate">{formatCurrency(totalDebit)}</p>
     </div>
   </div>
   {/if}
@@ -190,18 +190,18 @@
         {#each filtered as tx}
           <!-- svelte-ignore a11y-click-events-have-key-events -->
           <div
-            class="flex items-center justify-between px-6 py-4 cursor-pointer hover:bg-slate-50 transition-colors"
+            class="flex items-center justify-between px-4 sm:px-6 py-4 cursor-pointer hover:bg-slate-50 transition-colors gap-3"
             onclick={() => selectedTx = selectedTx?.id === tx.id ? null : tx}
           >
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
               <!-- Icon -->
-              <div class="flex h-11 w-11 items-center justify-center rounded-2xl text-xl {tx.amount >= 0 ? 'bg-green-100' : 'bg-slate-100'}">
+              <div class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl text-xl {tx.amount >= 0 ? 'bg-green-100' : 'bg-slate-100'}">
                 {getIcon(tx)}
               </div>
               <!-- Description -->
-              <div>
-                <p class="text-sm font-semibold text-slate-900">{tx.description}</p>
-                <p class="text-xs text-slate-400 mt-0.5">
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-slate-900 truncate">{tx.description}</p>
+                <p class="text-xs text-slate-400 mt-0.5 truncate">
                   {tx.merchant || tx.type}
                   {#if tx.category} · {tx.category}{/if}
                   · {txDate(tx)}
@@ -209,8 +209,8 @@
               </div>
             </div>
 
-            <div class="text-right">
-              <p class="font-bold {tx.amount >= 0 ? 'text-green-600' : 'text-slate-900'}">
+            <div class="text-right shrink-0 ml-2">
+              <p class="font-bold text-sm sm:text-base {tx.amount >= 0 ? 'text-green-600' : 'text-slate-900'}">
                 {tx.amount >= 0 ? '+' : ''}{formatCurrency(tx.amount)}
               </p>
               <span class="mt-0.5 inline-block rounded-full px-2 py-0.5 text-xs font-medium {getStatusColor(tx.status)}">
