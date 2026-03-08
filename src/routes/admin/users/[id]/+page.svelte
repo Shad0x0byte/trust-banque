@@ -64,9 +64,11 @@
 		try {
 			const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost/banking-api/public/api';
 			const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-			const headers: Record<string,string> = {};
-			if (token) headers['Authorization'] = `Bearer ${token}`;
-			const resp = await fetch(`${API_BASE}/user/upload_picture.php`, { method: 'POST', headers, body: fd });
+			// Append token as query param — nginx strips Authorization header
+			const url = token
+				? `${API_BASE}/user/upload_picture.php?_token=${encodeURIComponent(token)}`
+				: `${API_BASE}/user/upload_picture.php`;
+			const resp = await fetch(url, { method: 'POST', body: fd });
 			const data = await resp.json();
 			if (data.success) {
 				toast.success('Profile picture updated');
