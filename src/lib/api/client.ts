@@ -34,7 +34,12 @@ function buildHeaders(extra: Record<string, string> = {}): Record<string, string
     ...extra,
   };
   const token = getToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (token) {
+    // Send in both headers: Authorization for standard setups,
+    // X-Auth-Token as fallback because some nginx configs strip Authorization.
+    headers['Authorization'] = `Bearer ${token}`;
+    headers['X-Auth-Token'] = token;
+  }
   return headers;
 }
 
