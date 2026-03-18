@@ -47,13 +47,15 @@
     { href: '/dashboard/security',     icon: '🔐',  label: 'Security' },
   ];
 
-  // Bottom nav items (mobile — top 5 most used)
+  <!-- Bottom nav items (mobile — top 5 most used) --> 
   const mobileNavItems = [
     { href: '/dashboard',              icon: '⊞',  label: 'Home' },
     { href: '/dashboard/accounts',     icon: '🏛',  label: 'Accounts' },
     { href: '/dashboard/transfer',     icon: '↗',   label: 'Transfer' },
     { href: '/dashboard/transactions', icon: '≡',   label: 'History' },
     { href: '/dashboard/cards',        icon: '▭',   label: 'Cards' },
+//customer support email
+    { href: 'mailto:support@trustbanque.com', icon: '📧',  label: 'Support' }
   ];
 
   function isActive(href: string) {
@@ -135,6 +137,15 @@
           </li>
         {/each}
       </ul>
+
+ <!-- Add support email to desktop sidebar -->
+      <div class="mt-6 pt-4 border-t border-slate-100">
+        <a href="mailto:support@trustbanque.com"
+           class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
+          <span class="text-base w-5 text-center shrink-0">📧</span>
+          <span style="font-family: 'Inter', sans-serif;">Support</span>
+        </a>
+      </div>
     </nav>
 
     <!-- Profile card -->
