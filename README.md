@@ -1,42 +1,27 @@
-# sv
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+# Trust Banque
 
-## Creating a project
+**Trust Banque** is a secure and modern online banking platform built with **SvelteKit** and a **PHP REST API**.
 
-If you're seeing this, you've probably already done this step. Congrats!
+## Key Features
+- **User Dashboard**: Financial overview at a glance.
+- **Account Management**: View checking and savings accounts.
+- **Fund Transfers**: Securely send money.
+- **Transaction History**: Detailed records of all activities.
+- **Security Settings**: Manage active sessions and preferences.
 
-```sh
-# create a new project
-npx sv create my-app
-```
+## Technical Stack
+- **Frontend**: SvelteKit, Tailwind CSS v4, TypeScript.
+- **Backend**: PHP REST API, MySQL, JWT Authentication.
 
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-bun x sv create --template minimal --types ts --add tailwindcss="plugins:typography,forms" vitest="usages:unit,component" prettier playwright devtools-json --install bun frontend
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+=====================================================================================
+==      ===  ===============  ===      ===========      ===  ========================
+=  ====  ==  ===============  ==   ==   =========   ==   ==  ========================
+=  ====  ==  ===============  ==  ====  =========  ====  ==  =============  =========
+==  =======  ======   ======  ==  ====  ==  =  ==  ====  ==  =====  =  ==    ===   ==
+====  =====    ===  =  ===    ==  ====  ==  =  ==  ====  ==    ===  =  ===  ===  =  =
+======  ===  =  =====  ==  =  ==  ====  ===   ===  ====  ==  =  ===    ===  ===     =
+=  ====  ==  =  ===    ==  =  ==  ====  ===   ===  ====  ==  =  =====  ===  ===  ====
+=  ====  ==  =  ==  =  ==  =  ==   ==   ==  =  ==   ==   ==  =  ==  =  ===  ===  =  =
+==      ===  =  ===    ===    ===      ===  =  ===      ===    ====   ====   ===   ==
+=====================================================================================
