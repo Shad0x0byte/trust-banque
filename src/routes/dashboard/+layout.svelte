@@ -47,7 +47,7 @@
     { href: '/dashboard/security',     icon: '🔐',  label: 'Security' },
   ];
 
-  <!-- Bottom nav items (mobile — top 5 most used) --> 
+  // Bottom nav items (mobile — top 5 most used)  
   const mobileNavItems = [
     { href: '/dashboard',              icon: '⊞',  label: 'Home' },
     { href: '/dashboard/accounts',     icon: '🏛',  label: 'Accounts' },
