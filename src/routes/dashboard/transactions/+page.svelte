@@ -108,11 +108,12 @@
 
   <!-- Summary cards -->
   {#if !loading && transactions.length > 0}
-  <div class="grid grid-cols-3 gap-2 sm:gap-4">
-    <div class="rounded-2xl bg-white border border-slate-100 p-3 sm:p-5 shadow-sm min-w-0">
-      <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1 truncate">Transactions</p>
-      <p class="text-lg sm:text-2xl font-bold text-slate-900 truncate">{filtered.length}</p>
-    </div>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+  <div class="rounded-2xl bg-white border border-slate-100 p-3 sm:p-5 shadow-sm min-w-0">
+    <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1 truncate">Transactions</p>
+    <p class="text-lg sm:text-2xl font-bold text-slate-900 truncate">{filtered.length}</p>
+  </div>
+  <div class="sm:col-span-2 grid grid-cols-2 gap-2 sm:gap-4">
     <div class="rounded-2xl bg-white border border-slate-100 p-3 sm:p-5 shadow-sm min-w-0">
       <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1 truncate">Money In</p>
       <p class="text-lg sm:text-2xl font-bold text-green-600 truncate">+{formatCurrency(totalCredit)}</p>
@@ -122,6 +123,8 @@
       <p class="text-lg sm:text-2xl font-bold text-slate-900 truncate">{formatCurrency(totalDebit)}</p>
     </div>
   </div>
+</div>
+
   {/if}
 
   <!-- Filters -->
