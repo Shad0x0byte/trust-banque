@@ -154,17 +154,17 @@
     <div class="border-t border-slate-100 p-3">
       <div class="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
         <!-- Avatar -->
-        <div class="relative h-10 w-10 shrink-0">
+        <div class="relative h-[52px] w-[52px] shrink-0">
           {#if profilePictureUrl}
             <img src={profilePictureUrl} alt={userName}
-                 class="h-10 w-10 rounded-full object-cover ring-2 ring-emerald-500/30"
+                 class="h-[52px] w-[52px] rounded-full object-cover ring-2 ring-emerald-500/30"
                  on:error={(e) => { profilePictureUrl = null; }} />
           {:else}
-            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-sm font-bold text-white shadow">
+            <div class="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-sm font-bold text-white shadow">
               {initials}
             </div>
           {/if}
-          <span class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white"></span>
+          <span class="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white"></span>
         </div>
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-semibold text-slate-800">{userName}</p>
