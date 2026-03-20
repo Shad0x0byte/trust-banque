@@ -54,8 +54,6 @@
     { href: '/dashboard/transfer',     icon: '↗',   label: 'Transfer' },
     { href: '/dashboard/transactions', icon: '≡',   label: 'History' },
     { href: '/dashboard/cards',        icon: '▭',   label: 'Cards' },
-//customer support email
-    { href: 'mailto:support@trustbanque.com', icon: '📧',  label: 'Support' }
   ];
 
   function isActive(href: string) {
