@@ -145,6 +145,10 @@
           <span class="text-base w-5 text-center shrink-0">📧</span>
           <span style="font-family: 'Inter', sans-serif;">Support</span>
         </a>
+<!-- Visible Email Address -->
+          <p class="px-11 text-[11px] font-medium text-slate-400 select-all" title="Click to copy">
+            support@trustbanque.com
+          </p>
       </div>
     </nav>
 
