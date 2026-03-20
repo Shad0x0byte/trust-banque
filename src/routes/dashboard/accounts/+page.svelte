@@ -97,11 +97,7 @@
             <span class="text-slate-500">APY</span>
             <span class="font-medium text-emerald-600">{getAPY(account.account_type)}</span>
           </div>
-          <div class="flex justify-between">
-            <span class="text-slate-500">Opened</span>
-            <span class="font-medium">{formatDate(account.opened_date)}</span>
-          </div>
-        </div>
+                </div>
 
         <a
           href="/dashboard/transfer"
