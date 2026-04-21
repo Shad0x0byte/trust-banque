@@ -1,82 +1,77 @@
 <script lang="ts">
-	import { toast } from '$lib/stores/toast';
-	import { formatCurrency } from '$lib/utils/formatters';
+import { onMount } from 'svelte';
+import { toast } from '$lib/stores/toast';
+import { formatCurrency } from '$lib/utils/formatters';
+import { apiRequest } from '$lib/api/client';
+import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
 
-	let statements = [
-		{
-			id: 1,
-			month: 'February 2026',
-			period: 'Feb 1 - Feb 28',
-			accounts: 3,
-			transactions: 47,
-			size: '2.4 MB',
-			status: 'ready'
-		},
-		{
-			id: 2,
-			month: 'January 2026',
-			period: 'Jan 1 - Jan 31',
-			accounts: 3,
-			transactions: 52,
-			size: '2.6 MB',
-			status: 'ready'
-		},
-		{
-			id: 3,
-			month: 'December 2025',
-			period: 'Dec 1 - Dec 31',
-			accounts: 3,
-			transactions: 68,
-			size: '3.1 MB',
-			status: 'ready'
-		},
-		{
-			id: 4,
-			month: 'November 2025',
-			period: 'Nov 1 - Nov 30',
-			accounts: 2,
-			transactions: 41,
-			size: '2.1 MB',
-			status: 'ready'
-		},
-		{
-			id: 5,
-			month: 'October 2025',
-			period: 'Oct 1 - Oct 31',
-			accounts: 2,
-			transactions: 39,
-			size: '1.9 MB',
-			status: 'ready'
-		},
-		{
-			id: 6,
-			month: 'September 2025',
-			period: 'Sep 1 - Sep 30',
-			accounts: 2,
-			transactions: 44,
-			size: '2.2 MB',
-			status: 'ready'
-		}
-	];
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
-	let selectedYear = '2026';
-	let selectedAccount = 'all';
+interface Statement {
+  month: string;
+  year: number;
+  monthNum: number;
+  period: string;
+}
 
-	const years = ['2026', '2025', '2024', '2023'];
-	const accounts = [
-		{ value: 'all', label: 'All Accounts' },
-		{ value: '1', label: 'Primary Checking' },
-		{ value: '2', label: 'Emergency Fund' },
-		{ value: '3', label: 'Vacation Fund' }
-	];
+let statements: Statement[] = [];
+let loading = true;
+let selectedYear = new Date().getFullYear().toString();
+let selectedAccount = 'all';
+let userAccounts: { id: number; nickname?: string; account_type: string }[] = [];
 
-	function handleDownload(statement: (typeof statements)[0]) {
-		toast.success(`Downloading ${statement.month} statement...`);
-	}
+const years = ['2026', '2025', '2024', '2023'];
 
-	function handleEmail(statement: (typeof statements)[0]) {
-		toast.success(`Statement emailed to your registered address`);
-	}
+onMount(async () => {
+  // Load user accounts
+  const profileRes = await apiRequest<any>('/user/profile.php');
+  if (profileRes.success && profileRes.data) {
+    userAccounts = profileRes.data.accounts ?? [];
+  }
+  
+  // Generate statements for last 12 months
+  generateStatements();
+  loading = false;
+});
+
+function generateStatements() {
+  statements = [];
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthName = date.toLocaleString('default', { month: 'long' });
+    const year = date.getFullYear();
+    const monthNum = date.getMonth() + 1;
+    const lastDay = new Date(year, monthNum, 0).getDate();
+    
+    statements.push({
+      month: `${monthName} ${year}`,
+      year,
+      monthNum,
+      period: `${monthName.substring(0, 3)} 1 - ${monthName.substring(0, 3)} ${lastDay}`
+    });
+  }
+}
+
+function handleDownload(statement: Statement) {
+  const token = localStorage.getItem('auth_token');
+  const params = new URLSearchParams({
+    year: statement.year.toString(),
+    month: statement.monthNum.toString()
+  });
+  if (selectedAccount !== 'all') {
+    params.append('account_id', selectedAccount);
+  }
+  if (token) {
+    params.append('_token', token);
+  }
+  window.open(`${API_BASE}/statements/generate.php?${params.toString()}`, '_blank');
+  toast.success(`Opening ${statement.month} statement...`);
+}
+
+function handleEmail(statement: Statement) {
+  toast.success(`Statement for ${statement.month} emailed to your registered address`);
+}
 </script>
 
 <svelte:head>
@@ -100,100 +95,105 @@
 						<option value={year}>{year}</option>
 					{/each}
 				</select>
-				<select
-					bind:value={selectedAccount}
-					class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-				>
-					{#each accounts as account}
-						<option value={account.value}>{account.label}</option>
-					{/each}
-				</select>
+<select
+          bind:value={selectedAccount}
+          class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+          >
+          <option value="all">All Accounts</option>
+          {#each userAccounts as acc}
+          <option value={acc.id}>{acc.nickname || acc.account_type}</option>
+          {/each}
+        </select>
 			</div>
 		</div>
 	</div>
 
 	<!-- Summary Cards -->
-	<div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-		<div
-			class="rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 text-white shadow-lg"
-		>
-			<p class="mb-2 text-sm font-medium text-emerald-100">Total Statements</p>
-			<p class="text-4xl font-bold">{statements.length}</p>
-			<p class="mt-2 text-sm text-emerald-100">Available for download</p>
-		</div>
-		<div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-			<p class="mb-2 text-sm font-medium text-slate-500">This Year</p>
-			<p class="text-4xl font-bold text-slate-900">2</p>
-			<p class="mt-2 text-sm text-slate-500">Statements generated</p>
-		</div>
-		<div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-			<p class="mb-2 text-sm font-medium text-slate-500">Last Statement</p>
-			<p class="mt-1 text-xl font-bold text-slate-900">February 2026</p>
-			<p class="mt-2 text-sm text-slate-500">Generated on Mar 1</p>
-		</div>
-	</div>
+<!-- Summary Cards -->
+{#if !loading}
+<div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+  <div
+  class="rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 text-white shadow-lg"
+  >
+  <p class="mb-2 text-sm font-medium text-emerald-100">Total Statements</p>
+  <p class="text-4xl font-bold">{statements.length}</p>
+  <p class="mt-2 text-sm text-emerald-100">Available for download</p>
+  </div>
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+  <p class="mb-2 text-sm font-medium text-slate-500">This Year</p>
+  <p class="text-4xl font-bold text-slate-900">{statements.filter(s => s.year === parseInt(selectedYear)).length}</p>
+  <p class="mt-2 text-sm text-slate-500">Statements generated</p>
+  </div>
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+  <p class="mb-2 text-sm font-medium text-slate-500">Last Statement</p>
+  <p class="mt-1 text-xl font-bold text-slate-900">{statements[0]?.month || 'N/A'}</p>
+  <p class="mt-2 text-sm text-slate-500">Generated on demand</p>
+  </div>
+  </div>
+{/if}
 
-	<!-- Statements List -->
-	<div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-		<div class="flex items-center justify-between border-b border-slate-200 p-6">
-			<div>
-				<h3 class="text-lg font-bold text-slate-900">Available Statements</h3>
-				<p class="mt-1 text-sm text-slate-500">Statements are available for 7 years</p>
-			</div>
-			<button class="text-sm font-semibold text-emerald-600 hover:text-emerald-700 hover:underline">
-				Request Older Statements →
-			</button>
-		</div>
+<!-- Statements List -->
+<div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <div class="flex items-center justify-between border-b border-slate-200 p-6">
+  <div>
+    <h3 class="text-lg font-bold text-slate-900">Available Statements</h3>
+    <p class="mt-1 text-sm text-slate-500">Statements are generated on-demand for the past 12 months</p>
+  </div>
+  </div>
 
-		<div class="divide-y divide-slate-100">
-			{#each statements as statement}
-				<div class="p-6 transition-colors hover:bg-slate-50">
-					<div class="flex items-center justify-between">
-						<div class="flex items-center gap-4">
-							<div
-								class="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 text-2xl"
-							>
-								📄
-							</div>
-							<div>
-								<p class="text-lg font-semibold text-slate-900">{statement.month}</p>
-								<p class="text-sm text-slate-500">{statement.period}</p>
-								<div class="mt-2 flex items-center gap-3">
-									<span class="text-xs text-slate-500">{statement.accounts} accounts</span>
-									<span class="text-slate-300">•</span>
-									<span class="text-xs text-slate-500">{statement.transactions} transactions</span>
-									<span class="text-slate-300">•</span>
-									<span class="text-xs text-slate-500">{statement.size}</span>
-								</div>
-							</div>
-						</div>
+  {#if loading}
+  <div class="flex items-center justify-center py-24">
+    <LoadingSpinner size="lg" />
+  </div>
+  {:else}
+  <div class="divide-y divide-slate-100">
+  {#each statements.filter(s => s.year.toString() === selectedYear) as statement}
+    <div class="p-6 transition-colors hover:bg-slate-50">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-4">
+      <div
+        class="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 text-2xl"
+      >
+        📄
+      </div>
+      <div>
+        <p class="text-lg font-semibold text-slate-900">{statement.month}</p>
+        <p class="text-sm text-slate-500">{statement.period}</p>
+        <div class="mt-2 flex items-center gap-3">
+        <span class="text-xs text-slate-500">{userAccounts.length} accounts</span>
+        <span class="text-slate-300">•</span>
+        <span class="text-xs text-slate-500">On-demand generation</span>
+        </div>
+      </div>
+      </div>
 
-						<div class="flex items-center gap-3">
-							<span
-								class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700"
-							>
-								✓ Ready
-							</span>
-							<button
-								on:click={() => handleDownload(statement)}
-								class="inline-flex transform items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:scale-105 hover:bg-emerald-600"
-							>
-								<span>⬇️</span>
-								<span>Download</span>
-							</button>
-							<button
-								on:click={() => handleEmail(statement)}
-								class="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-200"
-							>
-								<span>📧</span>
-								<span>Email</span>
-							</button>
-						</div>
-					</div>
-				</div>
-			{/each}
-		</div>
-	</div>
+      <div class="flex items-center gap-3">
+      <span
+        class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700"
+      >
+        ✓ Ready
+      </span>
+      <button
+        on:click={() => handleDownload(statement)}
+        class="inline-flex transform items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:scale-105 hover:bg-emerald-600"
+      >
+        <span>⬇️</span>
+        <span>Download</span>
+      </button>
+      <button
+        on:click={() => handleEmail(statement)}
+        class="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-200"
+      >
+        <span>📧</span>
+        <span>Email</span>
+      </button>
+      </div>
+    </div>
+    </div>
+  {/each}
+  </div>
+  {/if}
+  </div>
 
 	<!-- Statement Settings -->
 	<div class="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

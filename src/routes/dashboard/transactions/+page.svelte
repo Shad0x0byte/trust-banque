@@ -9,6 +9,8 @@
   import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
   import type { Transaction, Account } from '$lib/types';
 
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
   // ── State ──────────────────────────────────────────────────────────────
   let loading      = true;
   let transactions: Transaction[] = [];
@@ -222,29 +224,40 @@
             </div>
           </div>
 
-          <!-- Expanded detail row -->
-          {#if selectedTx?.id === tx.id}
-            <div class="bg-slate-50 px-6 py-4 border-t border-slate-100 text-sm text-slate-600 grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div>
-                <p class="text-xs font-medium text-slate-400 uppercase mb-1">Balance After</p>
-                <p class="font-semibold text-slate-900">{formatCurrency(tx.balance_after)}</p>
-              </div>
-              {#if tx.reference_number}
-              <div>
-                <p class="text-xs font-medium text-slate-400 uppercase mb-1">Reference</p>
-                <p class="font-mono text-xs">{tx.reference_number}</p>
-              </div>
-              {/if}
-              <div>
-                <p class="text-xs font-medium text-slate-400 uppercase mb-1">Type</p>
-                <p class="capitalize font-medium">{tx.type}</p>
-              </div>
-              <div>
-                <p class="text-xs font-medium text-slate-400 uppercase mb-1">Status</p>
-                <span class="inline-block rounded-full px-2 py-0.5 text-xs font-semibold capitalize {getStatusColor(tx.status)}">{tx.status}</span>
-              </div>
-            </div>
-          {/if}
+<!-- Expanded detail row -->
+{#if selectedTx?.id === tx.id}
+<div class="bg-slate-50 px-6 py-4 border-t border-slate-100 text-sm text-slate-600">
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+    <div>
+      <p class="text-xs font-medium text-slate-400 uppercase mb-1">Balance After</p>
+      <p class="font-semibold text-slate-900">{formatCurrency(tx.balance_after)}</p>
+    </div>
+    {#if tx.reference_number}
+    <div>
+      <p class="text-xs font-medium text-slate-400 uppercase mb-1">Reference</p>
+      <p class="font-mono text-xs">{tx.reference_number}</p>
+    </div>
+    {/if}
+    <div>
+      <p class="text-xs font-medium text-slate-400 uppercase mb-1">Type</p>
+      <p class="capitalize font-medium">{tx.type}</p>
+    </div>
+    <div>
+      <p class="text-xs font-medium text-slate-400 uppercase mb-1">Status</p>
+      <span class="inline-block rounded-full px-2 py-0.5 text-xs font-semibold capitalize {getStatusColor(tx.status)}">{tx.status}</span>
+    </div>
+  </div>
+  {#if tx.reference_number}
+  <button onclick={() => {
+    const token = localStorage.getItem('auth_token');
+    const url = `${API_BASE}/receipts/generate.php?ref=${tx.reference_number}${token ? `&_token=${encodeURIComponent(token)}` : ''}`;
+    window.open(url, '_blank');
+  }} class="mt-2 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors">
+    📄 Download Receipt
+  </button>
+  {/if}
+</div>
+{/if}
         {/each}
       </div>
     {/if}

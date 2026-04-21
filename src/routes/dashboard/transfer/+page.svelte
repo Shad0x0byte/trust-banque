@@ -1,27 +1,30 @@
 <script lang="ts">
   import { onMount }   from 'svelte';
   import { toast }     from '$lib/stores/toast';
-  import { apiRequest, initiateInternalTransfer, initiateExternalTransfer } from '$lib/api/client';
+  import { apiRequest, initiateInternalTransfer, initiateExternalTransfer, getAccounts } from '$lib/api/client';
   import { formatCurrency } from '$lib/utils/formatters';
   import LoadingSpinner    from '$lib/components/LoadingSpinner.svelte';
   import type { Account }  from '$lib/types';
 
-  const US_BANKS = [
-    { name: 'Bank of America',  routing: '026009593' },
-    { name: 'JPMorgan Chase',   routing: '021000021' },
-    { name: 'Wells Fargo',      routing: '121042882' },
-    { name: 'Citibank',         routing: '021000089' },
-    { name: 'U.S. Bancorp',     routing: '091000022' },
-    { name: 'Truist Bank',      routing: '053101121' },
-    { name: 'PNC Bank',         routing: '043000096' },
-    { name: 'Goldman Sachs',    routing: '124085066' },
-    { name: 'Capital One',      routing: '051405515' },
-    { name: 'TD Bank',          routing: '031101266' },
-    { name: 'Ally Bank',        routing: '124003116' },
-    { name: 'Discover Bank',    routing: '031100649' },
-    { name: 'Charles Schwab',   routing: '121202211' },
-    { name: 'Other',            routing: '' },
-  ];
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+const US_BANKS = [
+  { name: 'Bank of America', routing: '026009593' },
+  { name: 'JPMorgan Chase', routing: '021000021' },
+  { name: 'Wells Fargo', routing: '121042882' },
+  { name: 'Citibank', routing: '021000089' },
+  { name: 'U.S. Bancorp', routing: '091000022' },
+  { name: 'Truist Bank', routing: '053101121' },
+  { name: 'PNC Bank', routing: '043000096' },
+  { name: 'Goldman Sachs', routing: '124085066' },
+  { name: 'Capital One', routing: '051405515' },
+  { name: 'TD Bank', routing: '031101266' },
+  { name: 'Ally Bank', routing: '124003116' },
+  { name: 'Discover Bank', routing: '031100649' },
+  { name: 'Charles Schwab', routing: '121202211' },
+  { name: 'Trust Banque', routing: '021000021' },
+  { name: 'Other', routing: '' },
+];
 
   const TRANSFER_PIN = '0419';
 
@@ -41,6 +44,20 @@
   let pin = '';
   let pinError = false;
   let showPin = false;
+  let recipientAccount: { id: number; account_type: string; recipient_name: string } | null = null;
+  let lookingUpAccount = false;
+  let showSuccessModal = false;
+  let lastTransferResult: {
+    reference_number: string;
+    amount: number;
+    from_account: string;
+    from_account_number?: string;
+    from_account_type?: string;
+    to_account: string;
+    from_balance: number;
+    to_balance: number;
+    date: string;
+  } | null = null;
 
   onMount(async () => {
     const res = await apiRequest<any>('/user/profile.php');
@@ -56,11 +73,42 @@
   $: fromAccount   = accounts.find(a => a.id === fromAccountId);
   $: maxTransfer   = fromAccount?.available_balance ?? 0;
 
-  function handleBankChange(e: Event) {
-    const val = (e.target as HTMLSelectElement).value;
-    transferData.selectedBank = val;
+  function handleBankChange() {
+    const val = transferData.selectedBank;
     const bank = US_BANKS.find(b => b.name === val);
     if (bank) transferData.routingNumber = bank.routing;
+    if (val !== 'Trust Banque') {
+      recipientAccount = null;
+    } else {
+      handleAccountNumberChange();
+    }
+  }
+
+  async function handleAccountNumberChange() {
+    const accountNum = transferData.toAccountExternal.replace(/\D/g, '');
+    transferData.toAccountExternal = accountNum;
+
+    if (!accountNum || accountNum.length < 8) {
+      recipientAccount = null;
+      return;
+    }
+
+    if (transferData.selectedBank === 'Trust Banque') {
+      lookingUpAccount = true;
+      try {
+        const res = await apiRequest<any>(`/transfer/lookup_account.php?account_number=${encodeURIComponent(accountNum)}`);
+        if (res.success && res.data?.found && res.data?.is_trustbanque) {
+          recipientAccount = res.data.account;
+          transferData.toName = res.data.account.recipient_name;
+        } else {
+          recipientAccount = null;
+        }
+      } catch {
+        recipientAccount = null;
+      } finally {
+        lookingUpAccount = false;
+      }
+    }
   }
 
   function validateForm(): boolean {
@@ -84,8 +132,8 @@
   }
 
   async function handleConfirm() {
-    if (!confirmationData) return;
-    // Validate PIN
+    const data = confirmationData;
+    if (!data) return;
     if (pin !== TRANSFER_PIN) {
       pinError = true;
       toast.error('Incorrect transaction PIN');
@@ -96,34 +144,64 @@
 
     try {
       let res: any;
-      const amount = parseFloat(confirmationData.amount);
+      const amount = parseFloat(data.amount);
 
-      if (confirmationData.transferType === 'internal') {
+      const isTrustBanqueTransfer = data.selectedBank === 'Trust Banque' && recipientAccount;
+
+      if (data.transferType === 'internal' || isTrustBanqueTransfer) {
+        const toAccountId = isTrustBanqueTransfer ? recipientAccount!.id : parseInt(data.toAccount);
         res = await initiateInternalTransfer({
-          from_account_id: parseInt(confirmationData.fromAccount),
-          to_account_id:   parseInt(confirmationData.toAccount),
+          from_account_id: parseInt(data.fromAccount),
+          to_account_id: toAccountId,
           amount,
-          note: confirmationData.note || undefined,
+          note: data.note || undefined,
         });
       } else {
         res = await initiateExternalTransfer({
-          from_account_id: parseInt(confirmationData.fromAccount),
-          recipient_name:  confirmationData.toName,
-          recipient_bank:  confirmationData.selectedBank,
-          routing_number:  confirmationData.routingNumber || undefined,
-          account_number:  confirmationData.toAccountExternal,
+          from_account_id: parseInt(data.fromAccount),
+          recipient_name: data.toName,
+          recipient_bank: data.selectedBank,
+          routing_number: data.routingNumber || undefined,
+          account_number: data.toAccountExternal,
           amount,
-          transfer_type:   confirmationData.transferType as 'external' | 'wire',
-          note: confirmationData.note || undefined,
+          transfer_type: data.transferType as 'external' | 'wire',
+          note: data.note || undefined,
         });
       }
 
       if (res.success) {
         toast.success('Transfer completed successfully!');
         showConfirmation = false;
+        
+        const fromAcc = accounts.find(a => String(a.id) === data.fromAccount);
+        let toAccName = data.toName;
+        if (isTrustBanqueTransfer && recipientAccount) {
+          toAccName = recipientAccount.recipient_name;
+        } else if (data.transferType === 'internal') {
+          const toAcc = accounts.find(a => String(a.id) === data.toAccount);
+          if (toAcc) toAccName = toAcc.nickname || toAcc.account_type;
+        }
+
+        lastTransferResult = {
+          reference_number: res.data?.reference_number || 'N/A',
+          amount: parseFloat(data.amount),
+          from_account: fromAcc?.nickname || fromAcc?.account_type || 'Account',
+          from_account_number: fromAcc?.account_number || '',
+          from_account_type: fromAcc?.account_type || '',
+          to_account: toAccName,
+          from_balance: res.data?.from_balance ?? fromAcc?.available_balance ?? 0,
+          to_balance: res.data?.to_balance ?? 0,
+          date: new Date().toLocaleString()
+        };
+        showSuccessModal = true;
+
+        // Reset form
+        transferData = { fromAccount: '', toAccount: '', toAccountExternal: '', toName: '', selectedBank: '', routingNumber: '', amount: '', transferType: 'internal', note: '' };
+        recipientAccount = null;
+        
+        // Refresh accounts
         const profileRes = await apiRequest<any>('/user/profile.php');
         if (profileRes.success && profileRes.data) accounts = profileRes.data.accounts ?? [];
-        transferData = { fromAccount: '', toAccount: '', toAccountExternal: '', toName: '', selectedBank: '', routingNumber: '', amount: '', transferType: 'internal', note: '' };
       } else {
         toast.error(res.error || 'Transfer failed');
       }
@@ -132,6 +210,11 @@
     } finally {
       isLoading = false;
     }
+  }
+
+  function closeSuccessModal() {
+    showSuccessModal = false;
+    lastTransferResult = null;
   }
 </script>
 
@@ -207,7 +290,7 @@
             </div>
             <div>
               <label class="mb-2 block text-sm font-semibold text-slate-700">Recipient Bank</label>
-              <select on:change={handleBankChange}
+              <select bind:value={transferData.selectedBank} on:change={handleBankChange}
                 class="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
                 <option value="">Select bank</option>
                 {#each US_BANKS as bank}
@@ -218,8 +301,13 @@
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label class="mb-2 block text-sm font-semibold text-slate-700">Account Number</label>
-                <input type="text" bind:value={transferData.toAccountExternal} placeholder="1234567890"
+                <input type="text" bind:value={transferData.toAccountExternal} on:input={handleAccountNumberChange} placeholder="1234567890"
                   class="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none" />
+                {#if lookingUpAccount}
+                  <span class="mt-1 text-xs text-slate-500">Looking up account...</span>
+                {:else if recipientAccount}
+                  <span class="mt-1 text-xs text-emerald-600 font-medium">✓ Found: {recipientAccount.recipient_name} ({recipientAccount.account_type})</span>
+                {/if}
               </div>
               <div>
                 <label class="mb-2 block text-sm font-semibold text-slate-700">Routing Number</label>
@@ -303,6 +391,8 @@
           <span class="text-sm font-semibold text-right max-w-[55%]">
             {#if confirmationData.transferType === 'internal'}
               {accounts.find(a => String(a.id) === confirmationData?.toAccount)?.nickname || 'Account'}
+            {:else if confirmationData.selectedBank === 'Trust Banque' && recipientAccount}
+              {recipientAccount.recipient_name} (Trust Banque - {recipientAccount.account_type})
             {:else}
               {confirmationData.toName}
             {/if}
@@ -354,6 +444,85 @@
             Confirm Transfer
           {/if}
         </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Success Modal -->
+{#if showSuccessModal && lastTransferResult}
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-md animate-in fade-in zoom-in duration-300">
+      <div class="overflow-hidden rounded-3xl bg-white shadow-2xl border border-slate-100">
+        <!-- Receipt Header -->
+        <div class="bg-emerald-600 px-6 py-8 text-center text-white relative">
+          <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <path d="M0 100 C 20 0 50 0 100 100 Z" fill="white"></path>
+            </svg>
+          </div>
+          <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 shadow-inner">
+            <span class="text-3xl">🏦</span>
+          </div>
+          <h2 class="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Trust Banque</h2>
+          <h3 class="font-display text-2xl font-bold">Transfer Successful</h3>
+          <p class="mt-2 text-sm text-emerald-50/80">Transaction Reference: <span class="font-mono font-bold">{lastTransferResult.reference_number}</span></p>
+        </div>
+
+        <!-- Receipt Body -->
+        <div class="p-6 sm:p-8">
+          <div class="mb-6 text-center">
+            <p class="text-sm font-medium text-slate-400 uppercase tracking-wide mb-1">Amount Transferred</p>
+            <p class="text-4xl font-extrabold text-slate-900 tracking-tight">{formatCurrency(lastTransferResult.amount)}</p>
+          </div>
+
+          <div class="space-y-4 rounded-2xl bg-slate-50 p-5 border border-slate-100">
+            <div class="flex justify-between items-start gap-4">
+              <span class="text-xs font-bold text-slate-400 uppercase mt-1">From</span>
+              <div class="text-right">
+                <p class="text-sm font-bold text-slate-900">{lastTransferResult.from_account}</p>
+                <p class="text-[11px] font-mono text-slate-500 uppercase">•••• {lastTransferResult.from_account_number ? lastTransferResult.from_account_number.slice(-4) : 'XXXX'}</p>
+                <p class="text-[10px] font-medium text-slate-400 uppercase tracking-tight">{lastTransferResult.from_account_type || 'Account'}</p>
+              </div>
+            </div>
+            <div class="h-px bg-slate-200/60"></div>
+            <div class="flex justify-between items-start gap-4">
+              <span class="text-xs font-bold text-slate-400 uppercase">To Recipient</span>
+              <span class="text-sm font-bold text-slate-900 text-right">{lastTransferResult.to_account}</span>
+            </div>
+            <div class="h-px bg-slate-200/60"></div>
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-slate-400 uppercase">Date & Time</span>
+              <span class="text-sm font-semibold text-slate-700">{lastTransferResult.date}</span>
+            </div>
+            <div class="h-px bg-slate-200/60"></div>
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-slate-400 uppercase">Reference Code</span>
+              <span class="text-sm font-mono font-bold text-emerald-600 uppercase tracking-wider">{lastTransferResult.reference_number}</span>
+            </div>
+          </div>
+
+          <p class="mt-6 text-center text-[11px] text-slate-400 leading-relaxed italic">
+            This is an official confirmation of your transaction. You can download the full receipt or take a screenshot for your records.
+          </p>
+
+          <div class="mt-8 flex flex-col gap-3">
+            <button on:click={() => {
+              if (lastTransferResult) {
+                const token = localStorage.getItem('auth_token');
+                const url = `${API_BASE}/receipts/generate.php?ref=${lastTransferResult.reference_number}${token ? `&_token=${encodeURIComponent(token)}` : ''}`;
+                window.open(url, '_blank');
+              }
+            }}
+              class="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all active:scale-[0.98]">
+              📄 View Full Receipt
+            </button>
+            <button on:click={closeSuccessModal}
+              class="flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all">
+              Done
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
