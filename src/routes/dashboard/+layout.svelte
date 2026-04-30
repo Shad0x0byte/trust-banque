@@ -2,15 +2,28 @@
   import { page }    from '$app/stores';
   import { auth }    from '$lib/stores/auth';
   import { goto }    from '$app/navigation';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { apiRequest } from '$lib/api/client';
   import DashboardFooter from '$lib/components/DashboardFooter.svelte';
+  import type { AuthState } from '$lib/types';
 
-  let authState: any = { user: null, isAuthenticated: false, loading: true };
+  interface NavItem {
+    href: string;
+    icon: string;
+    label: string;
+  }
+
+  let authState: AuthState = { 
+    user: null, 
+    isAuthenticated: false, 
+    loading: true,
+    token: null 
+  };
+  
   let sidebarOpen = false;
   let profilePictureUrl: string | null = null;
 
-  auth.subscribe(s => {
+  const authUnsubscribe = auth.subscribe((s: AuthState) => {
     authState = s;
     // read picture from store (updated after profile fetch)
     profilePictureUrl = (s.user as any)?.profile_picture_url ?? null;
@@ -28,16 +41,18 @@
     });
   });
 
-  const unsubscribe = auth.subscribe(s => {
+  const redirectUnsubscribe = auth.subscribe((s: AuthState) => {
     if (!s.loading && !s.isAuthenticated) goto('/login');
   });
 
-  import { onDestroy } from 'svelte';
-  onDestroy(unsubscribe);
+  onDestroy(() => {
+    authUnsubscribe();
+    redirectUnsubscribe();
+  });
 
-  $: currentPath = $page.url.pathname;
+  $: currentPath = $page.url.pathname.replace(/\/$/, '') || '/dashboard';
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { href: '/dashboard',              icon: '⊞',  label: 'Overview' },
     { href: '/dashboard/accounts',     icon: '🏛',  label: 'Accounts' },
     { href: '/dashboard/transfer',     icon: '↗',   label: 'Transfer' },
@@ -48,7 +63,7 @@
   ];
 
   // Bottom nav items (mobile — top 5 most used)  
-  const mobileNavItems = [
+  const mobileNavItems: NavItem[] = [
     { href: '/dashboard',              icon: '⊞',  label: 'Home' },
     { href: '/dashboard/accounts',     icon: '🏛',  label: 'Accounts' },
     { href: '/dashboard/transfer',     icon: '↗',   label: 'Transfer' },
@@ -57,8 +72,10 @@
   ];
 
   function isActive(href: string) {
-    const normalizedHref = href.replace(/\/$/, '') || '/';
-    if (normalizedHref === '/dashboard') return currentPath === '/dashboard';
+    const normalizedHref = href.replace(/\/$/, '') || '/dashboard';
+    if (normalizedHref === '/dashboard') {
+      return currentPath === '/dashboard';
+    }
     return currentPath.startsWith(normalizedHref);
   }
 
