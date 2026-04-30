@@ -30,6 +30,7 @@ const US_BANKS = [
 
   let pageLoading = true;
   let accounts: Account[] = [];
+  let user: any = null;
 
   let transferData = {
     fromAccount: '', toAccount: '', toAccountExternal: '',
@@ -64,6 +65,7 @@ const US_BANKS = [
     pageLoading = false;
     if (res.success && res.data) {
       accounts = res.data.accounts ?? [];
+      user = res.data.user;
     } else {
       toast.error('Could not load your accounts');
     }
@@ -229,6 +231,24 @@ const US_BANKS = [
     <p class="mt-1 text-sm text-slate-500">Transfers are secure and encrypted.</p>
   </div>
 
+  {#if user?.status === 'suspended'}
+    <div class="mb-6 flex flex-col gap-4 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm sm:flex-row sm:items-center">
+      <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-100 text-2xl">
+        🚫
+      </div>
+      <div class="flex-1">
+        <h3 class="text-sm font-bold text-red-900 sm:text-base">Account Suspended</h3>
+        <p class="mt-0.5 text-xs text-red-700 sm:text-sm">
+          Outgoing transfers are currently disabled for your account. Please contact our support team to resolve this issue and restore full access to your account features.
+        </p>
+      </div>
+      <a href="mailto:support@trustbanque.com" 
+         class="rounded-xl bg-red-600 px-4 py-2 text-center text-xs font-bold text-white shadow-sm hover:bg-red-700 transition-colors sm:px-5 sm:py-2.5 sm:text-sm">
+        Contact Support
+      </a>
+    </div>
+  {/if}
+
   <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
     <!-- Transfer form -->
     <div class="lg:col-span-2">
@@ -337,10 +357,17 @@ const US_BANKS = [
               class="block w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"></textarea>
           </div>
 
-          <button type="button" on:click={handleReview}
-            class="w-full rounded-xl bg-emerald-600 px-4 py-4 text-base font-bold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-[0.98]">
-            Review Transfer →
-          </button>
+          {#if user?.status === 'suspended'}
+            <a href="mailto:support@trustbanque.com"
+               class="flex w-full items-center justify-center rounded-xl bg-slate-100 px-4 py-4 text-base font-bold text-slate-500 transition-all hover:bg-slate-200">
+              Contact Support to Transfer
+            </a>
+          {:else}
+            <button type="button" on:click={handleReview}
+              class="w-full rounded-xl bg-emerald-600 px-4 py-4 text-base font-bold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-[0.98]">
+              Review Transfer →
+            </button>
+          {/if}
         </div>
       </div>
     </div>

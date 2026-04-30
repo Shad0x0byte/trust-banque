@@ -1,0 +1,24 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# Build output
+.svelte-kit/
+build/
+.vercel/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+#Tooling
+.npm/
+package-lock.json
+bun.lock

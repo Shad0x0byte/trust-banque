@@ -108,6 +108,24 @@
 		<p class="mt-2 text-slate-600">Manage your account settings and preferences.</p>
 	</div>
 
+	{#if $auth.user?.status === 'suspended'}
+		<div class="mb-8 flex flex-col gap-4 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm sm:flex-row sm:items-center">
+			<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-100 text-2xl">
+				🚫
+			</div>
+			<div class="flex-1">
+				<h3 class="text-sm font-bold text-red-900 sm:text-base">Profile Updates Restricted</h3>
+				<p class="mt-0.5 text-xs text-red-700 sm:text-sm">
+					Your account is currently suspended. While you can view your profile and change app preferences like theme and language, personal data updates and photo changes are temporarily disabled.
+				</p>
+			</div>
+			<a href="mailto:support@trustbanque.com" 
+				class="rounded-xl bg-red-600 px-4 py-2 text-center text-xs font-bold text-white shadow-sm hover:bg-red-700 transition-colors sm:px-5 sm:py-2.5 sm:text-sm">
+				Contact Support
+			</a>
+		</div>
+	{/if}
+
 	<div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
 		<!-- Settings Navigation -->
 		<div class="lg:col-span-1">
@@ -167,7 +185,8 @@
 						</div>
 						<div>
 							<button
-								class="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-emerald-600"
+								disabled={$auth.user?.status === 'suspended'}
+								class="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
 							>
 								Change Photo
 							</button>
@@ -181,7 +200,8 @@
 							<input
 								type="text"
 								bind:value={profileData.firstName}
-								class="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 sm:text-sm"
+								disabled={$auth.user?.status === 'suspended'}
+								class="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:bg-slate-50 disabled:text-slate-500 sm:text-sm"
 							/>
 						</div>
 						<div>
@@ -189,7 +209,8 @@
 							<input
 								type="text"
 								bind:value={profileData.lastName}
-								class="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 sm:text-sm"
+								disabled={$auth.user?.status === 'suspended'}
+								class="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:bg-slate-50 disabled:text-slate-500 sm:text-sm"
 							/>
 						</div>
 					</div>
@@ -199,7 +220,8 @@
 						<input
 							type="email"
 							bind:value={profileData.email}
-							class="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 sm:text-sm"
+							disabled={$auth.user?.status === 'suspended'}
+							class="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:bg-slate-50 disabled:text-slate-500 sm:text-sm"
 						/>
 					</div>
 
@@ -208,14 +230,16 @@
 						<input
 							type="tel"
 							bind:value={profileData.phone}
-							class="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 sm:text-sm"
+							disabled={$auth.user?.status === 'suspended'}
+							class="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:bg-slate-50 disabled:text-slate-500 sm:text-sm"
 						/>
 					</div>
 
 					<div class="border-t border-slate-200 pt-4">
 						<button
 							on:click={handleSaveProfile}
-							class="rounded-xl bg-emerald-500 px-6 py-3 font-semibold text-white transition-all hover:bg-emerald-600"
+							disabled={$auth.user?.status === 'suspended'}
+							class="rounded-xl bg-emerald-500 px-6 py-3 font-semibold text-white transition-all hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							Save Changes
 						</button>

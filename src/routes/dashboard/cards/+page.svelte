@@ -4,7 +4,7 @@
   // Supports locking/unlocking cards and viewing card details.
 
   import { onMount }   from 'svelte';
-  import { getCards, lockCard } from '$lib/api/client';
+  import { getCards, lockCard, apiRequest } from '$lib/api/client';
   import { formatCurrency, formatDate } from '$lib/utils/formatters';
   import { toast }     from '$lib/stores/toast';
   import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
@@ -12,9 +12,16 @@
 
   let loading = true;
   let cards: Card[] = [];
+  let user: any = null;
   let togglingId: number | null = null;  // which card is currently toggling
 
   onMount(async () => {
+    // Fetch user profile to check status
+    const userRes = await apiRequest<any>('/user/profile.php');
+    if (userRes.success && userRes.data) {
+      user = userRes.data.user;
+    }
+
     const res = await getCards();
     loading = false;
     if (res.success && res.data) {
@@ -26,6 +33,11 @@
 
   // ── Lock / Unlock ─────────────────────────────────────────────────────
   async function handleToggleLock(card: Card) {
+    if (user?.status === 'suspended') {
+      toast.error('Your account is suspended. Card operations are disabled.');
+      return;
+    }
+
     const wantLocked = card.status === 'active';
     togglingId = card.id;
 
@@ -70,6 +82,24 @@
     <h1 class="text-3xl font-bold tracking-tight text-slate-900">Your Cards</h1>
     <p class="mt-1 text-slate-600">Manage your debit and credit cards.</p>
   </div>
+
+  {#if user?.status === 'suspended'}
+    <div class="flex flex-col gap-4 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm sm:flex-row sm:items-center">
+      <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-100 text-2xl">
+        🚫
+      </div>
+      <div class="flex-1">
+        <h3 class="text-sm font-bold text-red-900 sm:text-base">Card Controls Suspended</h3>
+        <p class="mt-0.5 text-xs text-red-700 sm:text-sm">
+          Due to your account's current status, card operations are temporarily disabled. You can still view your card details and status, but you cannot lock, unlock, or request new cards at this time.
+        </p>
+      </div>
+      <a href="mailto:support@trustbanque.com" 
+         class="rounded-xl bg-red-600 px-4 py-2 text-center text-xs font-bold text-white shadow-sm hover:bg-red-700 transition-colors sm:px-5 sm:py-2.5 sm:text-sm">
+        Contact Support
+      </a>
+    </div>
+  {/if}
 
   {#if loading}
     <div class="flex items-center justify-center py-32"><LoadingSpinner size="lg" /></div>
@@ -173,8 +203,8 @@
           <!-- Lock / Unlock -->
           {#if card.status !== 'reported_lost'}
           <button
-            onclick={() => handleToggleLock(card)}
-            disabled={togglingId === card.id}
+            on:click={() => handleToggleLock(card)}
+            disabled={togglingId === card.id || user?.status === 'suspended'}
             class="flex w-full items-center justify-center gap-2 rounded-xl border py-3 text-sm font-semibold transition-all
               {card.status === 'active'
                 ? 'border-amber-200 text-amber-700 hover:bg-amber-50'
@@ -195,7 +225,7 @@
           <!-- Report Lost (info only — would need extra endpoint in production) -->
           {#if card.status !== 'reported_lost'}
           <button
-            onclick={() => toast.info('Please call 1-800-TRUST-BQ to report a lost card.')}
+            on:click={() => toast.info('Please call 1-800-TRUST-BQ to report a lost card.')}
             class="w-full rounded-xl border border-red-200 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
           >
             🚨 Report Lost / Stolen
