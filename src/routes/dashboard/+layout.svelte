@@ -57,8 +57,9 @@
   ];
 
   function isActive(href: string) {
-    if (href === '/dashboard') return currentPath === '/dashboard';
-    return currentPath.startsWith(href);
+    const normalizedHref = href.replace(/\/$/, '') || '/';
+    if (normalizedHref === '/dashboard') return currentPath === '/dashboard';
+    return currentPath.startsWith(normalizedHref);
   }
 
   async function handleSignOut() {
