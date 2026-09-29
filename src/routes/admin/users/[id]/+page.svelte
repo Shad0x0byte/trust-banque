@@ -38,6 +38,43 @@
 	let savingTx = false;
 
 	// Picture upload
+	// ── Set a customer's password (admin issues it directly to them) ──
+	let showPwPanel = false;
+	let pwValue = '';
+	let pwConfirm = '';
+	let pwError = '';
+	let pwSaving = false;
+
+	const pwRules = [
+		{ label: 'At least 8 characters', test: (v: string) => v.length >= 8 },
+		{ label: 'An uppercase letter', test: (v: string) => /[A-Z]/.test(v) },
+		{ label: 'A lowercase letter', test: (v: string) => /[a-z]/.test(v) },
+		{ label: 'A number', test: (v: string) => /[0-9]/.test(v) },
+		{ label: 'A special character (!@#$%^&*)', test: (v: string) => /[!@#$%^&*]/.test(v) }
+	];
+	$: pwMissing = pwRules.filter((r) => !r.test(pwValue)).map((r) => r.label);
+	$: pwReady = pwValue.length > 0 && pwMissing.length === 0 && pwValue === pwConfirm;
+
+	async function handleSetPassword() {
+		pwError = '';
+		if (pwMissing.length) { pwError = 'Password does not meet all requirements.'; return; }
+		if (pwValue !== pwConfirm) { pwError = 'The two passwords do not match.'; return; }
+		pwSaving = true;
+		const res = await apiRequest('/admin/user_update.php', {
+			method: 'POST',
+			body: JSON.stringify({ user_id: userId, password: pwValue })
+		});
+		pwSaving = false;
+		if (res.success) {
+			toast.success('Password set. Copy it now — it is not shown again.');
+			pwValue = '';
+			pwConfirm = '';
+			showPwPanel = false;
+		} else {
+			pwError = res.error || 'Failed to set password.';
+		}
+	}
+
 	let showPictureUpload = false;
 	let pictureFile: File | null = null;
 	let picturePreview: string | null = null;
@@ -575,6 +612,45 @@
 							<p class="text-xs text-slate-500">{user.status === 'active' ? 'Restrict access' : 'Restore access'}</p>
 						</div>
 					</button>
+
+					<button on:click={() => { showPwPanel = !showPwPanel; showBalancePanel = false; showTransferPanel = false; pwValue = ''; pwConfirm = ''; pwError = ''; }}
+						class="flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-all {showPwPanel ? 'border-violet-400 bg-violet-50' : 'border-slate-200 bg-slate-50 hover:border-violet-200 hover:bg-violet-50'}">
+						<span class="text-xl">🔑</span>
+						<div>
+							<p class="text-sm font-semibold text-slate-900">Set Password</p>
+							<p class="text-xs text-slate-500">Issue a login password for this customer</p>
+						</div>
+					</button>
+
+					{#if showPwPanel}
+						<div class="rounded-xl border border-violet-200 bg-white p-4 space-y-3">
+							{#if pwError}<div class="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{pwError}</div>{/if}
+							<div>
+								<label for="tb-pw-new" class="mb-1 block text-xs font-medium text-slate-500">New password</label>
+								<input id="tb-pw-new" type="text" bind:value={pwValue} autocomplete="off" spellcheck="false" class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm" />
+							</div>
+							<div>
+								<label for="tb-pw-confirm" class="mb-1 block text-xs font-medium text-slate-500">Confirm password</label>
+								<input id="tb-pw-confirm" type="text" bind:value={pwConfirm} autocomplete="off" spellcheck="false" class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm" />
+							</div>
+							<ul class="space-y-1">
+								{#each pwRules as rule (rule.label)}
+									{@const ok = rule.test(pwValue)}
+									<li class="flex items-center gap-2 text-xs {ok ? 'text-emerald-600' : 'text-slate-400'}">
+										<span class="w-3 font-mono">{ok ? '✓' : '·'}</span>{rule.label}
+									</li>
+								{/each}
+								{#if pwValue.length > 0 && pwValue !== pwConfirm}
+									<li class="flex items-center gap-2 text-xs text-red-600"><span class="w-3 font-mono">✗</span>Passwords must match</li>
+								{/if}
+							</ul>
+							<p class="text-[11px] text-slate-400">This is recorded in the audit log. It cannot be read back afterwards.</p>
+							<button on:click={handleSetPassword} disabled={pwSaving || !pwReady}
+								class="w-full rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+								{pwSaving ? 'Saving…' : 'Set Password'}
+							</button>
+						</div>
+					{/if}
 
 					<button
 						on:click={async () => {
