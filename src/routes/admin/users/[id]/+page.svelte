@@ -643,12 +643,12 @@
 								</div>
 							{/if}
 
-							<div class="grid gap-4 sm:grid-cols-2">
+							<div class="space-y-4">
 								<div>
 									<div class="mb-1.5 flex items-baseline justify-between gap-2">
-										<label for="tb-pw-new" class="text-xs font-semibold uppercase tracking-wide text-slate-500">New password</label>
+										<label for="tb-pw-new" class="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-slate-500">New password</label>
 										<button type="button" on:click={copyPassword}
-											class="rounded-md text-xs font-semibold text-violet-600 transition-colors hover:text-violet-700 hover:underline disabled:pointer-events-none disabled:opacity-40">
+											class="shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold text-violet-600 transition-colors hover:bg-violet-50 hover:text-violet-700 disabled:pointer-events-none disabled:opacity-40">
 											{pwCopied ? 'Copied' : 'Copy'}
 										</button>
 									</div>
@@ -662,7 +662,7 @@
 								</div>
 							</div>
 
-							<ul class="mt-5 grid gap-x-6 gap-y-2 border-t border-slate-100 pt-4 sm:grid-cols-2">
+							<ul class="mt-5 space-y-2 border-t border-slate-100 pt-4">
 								{#each pwRules as rule (rule.label)}
 									{@const ok = rule.test(pwValue)}
 									<li class="flex items-center gap-2 text-[13px] leading-tight {ok ? 'text-emerald-700' : 'text-slate-400'}">
