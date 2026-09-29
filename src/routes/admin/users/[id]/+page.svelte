@@ -62,7 +62,7 @@
 		{ label: 'An uppercase letter', test: (v: string) => /[A-Z]/.test(v) },
 		{ label: 'A lowercase letter', test: (v: string) => /[a-z]/.test(v) },
 		{ label: 'A number', test: (v: string) => /[0-9]/.test(v) },
-		{ label: 'A special character (!@#$%^&*)', test: (v: string) => /[!@#$%^&*]/.test(v) }
+		{ label: 'A special character', test: (v: string) => /[!@#$%^&*]/.test(v) }
 	];
 	$: pwMissing = pwRules.filter((r) => !r.test(pwValue)).map((r) => r.label);
 	$: pwReady = pwValue.length > 0 && pwMissing.length === 0 && pwValue === pwConfirm;
