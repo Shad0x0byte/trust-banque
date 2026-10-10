@@ -2,7 +2,7 @@
 import { onMount } from 'svelte';
 import { toast } from '$lib/stores/toast';
 import { formatCurrency } from '$lib/utils/formatters';
-import { apiRequest } from '$lib/api/client';
+import { getAccounts } from '$lib/api/client';
 import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
@@ -23,11 +23,9 @@ let userAccounts: { id: number; nickname?: string; account_type: string }[] = []
 const years = ['2026', '2025', '2024', '2023'];
 
 onMount(async () => {
-  // Load user accounts
-  const profileRes = await apiRequest<any>('/user/profile.php');
-  if (profileRes.success && profileRes.data) {
-    userAccounts = profileRes.data.accounts ?? [];
-  }
+  // Load user accounts (profile.php no longer embeds them)
+  const accRes = await getAccounts();
+  if (accRes.success && accRes.data) userAccounts = accRes.data.accounts ?? [];
   
   // Generate statements for last 12 months
   generateStatements();

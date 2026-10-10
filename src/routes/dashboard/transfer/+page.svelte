@@ -61,14 +61,15 @@ const US_BANKS = [
   } | null = null;
 
   onMount(async () => {
-    const res = await apiRequest<any>('/user/profile.php');
+    // profile.php returns user only; accounts come from /accounts/list.php
+    const [res, accRes] = await Promise.all([
+      apiRequest<any>('/user/profile.php'),
+      getAccounts(),
+    ]);
     pageLoading = false;
-    if (res.success && res.data) {
-      accounts = res.data.accounts ?? [];
-      user = res.data.user;
-    } else {
-      toast.error('Could not load your accounts');
-    }
+    if (res.success && res.data) user = res.data.user;
+    if (accRes.success && accRes.data) accounts = accRes.data.accounts ?? [];
+    else toast.error('Could not load your accounts');
   });
 
   $: fromAccountId = transferData.fromAccount ? parseInt(transferData.fromAccount) : null;
@@ -202,8 +203,8 @@ const US_BANKS = [
         recipientAccount = null;
         
         // Refresh accounts
-        const profileRes = await apiRequest<any>('/user/profile.php');
-        if (profileRes.success && profileRes.data) accounts = profileRes.data.accounts ?? [];
+        const accRefresh = await getAccounts();
+        if (accRefresh.success && accRefresh.data) accounts = accRefresh.data.accounts ?? [];
       } else {
         toast.error(res.error || 'Transfer failed');
       }

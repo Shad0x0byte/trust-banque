@@ -4,7 +4,7 @@
   // Supports filtering by type, category, and text search.
 
   import { onMount }  from 'svelte';
-  import { apiRequest } from '$lib/api/client';
+  import { apiRequest, getAccounts } from '$lib/api/client';
   import { formatCurrency, formatDate } from '$lib/utils/formatters';
   import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
   import type { Transaction, Account } from '$lib/types';
@@ -30,11 +30,9 @@
 
   // ── Load data ──────────────────────────────────────────────────────────
   onMount(async () => {
-    // Load accounts so user can filter by account
-    const profileRes = await apiRequest<any>('/user/profile.php');
-    if (profileRes.success && profileRes.data) {
-      accounts = profileRes.data.accounts ?? [];
-    }
+    // profile.php no longer embeds accounts — fetch from the dedicated endpoint
+    const accRes = await getAccounts();
+    if (accRes.success && accRes.data) accounts = accRes.data.accounts ?? [];
 
     // Load transactions (all accounts, latest 100)
     await loadTransactions();

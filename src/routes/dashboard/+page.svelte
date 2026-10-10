@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { auth } from '$lib/stores/auth';
-  import { apiRequest } from '$lib/api/client';
+  import { apiRequest, getAccounts } from '$lib/api/client';
   import { formatCurrency, formatDate } from '$lib/utils/formatters';
   import { goto } from '$app/navigation';
   import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
@@ -12,24 +12,28 @@
   let transactions: any[] = [];
 
   onMount(async () => {
-    const res = await apiRequest<any>('/user/profile.php');
+    // profile.php returns { user, sessions } only — accounts come from /accounts/list.php
+    const [res, accRes, txRes] = await Promise.all([
+      apiRequest<any>('/user/profile.php'),
+      getAccounts(),
+      apiRequest<any>('/transactions/list.php?limit=8'),
+    ]);
     loading = false;
     if (res.success && res.data) {
       user = res.data.user;
-      accounts = res.data.accounts;
       // Sync picture URL into auth store so sidebar updates
       auth.updateUser({
         profile_picture_url: res.data.user.profile_picture_url ?? null,
         profile_picture:     res.data.user.profile_picture ?? null,
       } as any);
     }
-    const txRes = await apiRequest<any>('/transactions/list.php?limit=8');
-    if (txRes.success && txRes.data) transactions = txRes.data.transactions;
+    if (accRes.success && accRes.data) accounts = accRes.data.accounts ?? [];
+    if (txRes.success && txRes.data) transactions = txRes.data.transactions ?? [];
   });
 
-  $: totalBalance       = accounts.reduce((s, a) => s + a.balance, 0);
-  $: checkingAccounts   = accounts.filter(a => a.account_type === 'checking');
-  $: savingsAccounts    = accounts.filter(a => a.account_type === 'savings');
+  $: totalBalance       = (accounts ?? []).reduce((s, a) => s + a.balance, 0);
+  $: checkingAccounts   = (accounts ?? []).filter(a => a.account_type === 'checking');
+  $: savingsAccounts    = (accounts ?? []).filter(a => a.account_type === 'savings');
 
   let authState: any = {};
   auth.subscribe(s => { authState = s; });

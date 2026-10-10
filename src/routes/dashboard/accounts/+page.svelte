@@ -3,7 +3,7 @@
   // Fetches real account data from the API and displays account cards + detail table.
 
   import { onMount }  from 'svelte';
-  import { apiRequest } from '$lib/api/client';
+  import { getAccounts } from '$lib/api/client';
   import { formatCurrency, formatDate, formatFullAccountNumber } from '$lib/utils/formatters';
   import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
   import type { Account } from '$lib/types';
@@ -12,11 +12,10 @@
   let accounts: Account[] = [];
 
   onMount(async () => {
-    const res = await apiRequest<any>('/user/profile.php');
+    // profile.php no longer embeds accounts — fetch them from the dedicated endpoint
+    const res = await getAccounts();
     loading = false;
-    if (res.success && res.data) {
-      accounts = res.data.accounts ?? [];
-    }
+    if (res.success && res.data) accounts = res.data.accounts ?? [];
   });
 
   function getAccountIcon(type: string): string {
