@@ -240,12 +240,12 @@ const US_BANKS = [
       <div class="flex-1">
         <h3 class="text-sm font-bold text-red-900 sm:text-base">Account Suspended</h3>
         <p class="mt-0.5 text-xs text-red-700 sm:text-sm">
-          Outgoing transfers are currently disabled for your account. Please contact our support team to resolve this issue and restore full access to your account features.
+          Outgoing transfers are currently disabled for your account. Please contact compliance@trustbanque.com to resolve this issue and restore full access to your account features.
         </p>
       </div>
-      <a href="mailto:support@trustbanque.com" 
+      <a href="mailto:compliance@trustbanque.com" 
          class="rounded-xl bg-red-600 px-4 py-2 text-center text-xs font-bold text-white shadow-sm hover:bg-red-700 transition-colors sm:px-5 sm:py-2.5 sm:text-sm">
-        Contact Support
+        Contact Compliance
       </a>
     </div>
   {/if}
@@ -359,9 +359,9 @@ const US_BANKS = [
           </div>
 
           {#if user?.status === 'suspended'}
-            <a href="mailto:support@trustbanque.com"
+            <a href="mailto:compliance@trustbanque.com"
                class="flex w-full items-center justify-center rounded-xl bg-slate-100 px-4 py-4 text-base font-bold text-slate-500 transition-all hover:bg-slate-200">
-              Contact Support to Transfer
+              Contact Compliance to Transfer
             </a>
           {:else}
             <button type="button" on:click={handleReview}

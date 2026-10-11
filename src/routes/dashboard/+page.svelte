@@ -60,12 +60,12 @@
       <div class="flex-1">
         <h3 class="text-sm font-bold text-red-900 sm:text-base">Account Suspended</h3>
         <p class="mt-0.5 text-xs text-red-700 sm:text-sm">
-          Your account has been suspended for security reasons. You can still view your balances and history, but all outgoing transactions and card operations are currently blocked. Please contact support to resolve this.
+          Your account has been suspended for security reasons. You can still view your balances and history, but all outgoing transactions and card operations are currently blocked. Please contact compliance@trustbanque.com to resolve this.
         </p>
       </div>
-      <a href="mailto:support@trustbanque.com" 
+      <a href="mailto:compliance@trustbanque.com" 
          class="rounded-xl bg-red-600 px-4 py-2 text-center text-xs font-bold text-white shadow-sm hover:bg-red-700 transition-colors sm:px-5 sm:py-2.5 sm:text-sm">
-        Contact Support
+        Contact Compliance
       </a>
     </div>
   {/if}

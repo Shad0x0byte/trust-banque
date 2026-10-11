@@ -119,9 +119,9 @@
 					Your account is currently suspended. While you can view your profile and change app preferences like theme and language, personal data updates and photo changes are temporarily disabled.
 				</p>
 			</div>
-			<a href="mailto:support@trustbanque.com" 
+			<a href="mailto:compliance@trustbanque.com" 
 				class="rounded-xl bg-red-600 px-4 py-2 text-center text-xs font-bold text-white shadow-sm hover:bg-red-700 transition-colors sm:px-5 sm:py-2.5 sm:text-sm">
-				Contact Support
+				Contact Compliance
 			</a>
 		</div>
 	{/if}

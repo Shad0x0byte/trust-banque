@@ -36,7 +36,8 @@
       if (res.success && res.data?.user) {
         const u = res.data.user;
         profilePictureUrl = u.profile_picture_url ?? null;
-        auth.updateUser({ profile_picture_url: profilePictureUrl } as any);
+        // keep status fresh too — the suspension bar reacts to it
+        auth.updateUser({ profile_picture_url: profilePictureUrl, status: u.status } as any);
       }
     });
   });
@@ -246,6 +247,23 @@
         </button>
       </div>
     </header>
+
+    <!-- Global suspension bar — every dashboard page, actions stay blocked -->
+    {#if authState.user?.status === 'suspended'}
+      <div class="border-b-2 border-red-300 bg-red-600 px-4 py-2.5 sm:px-6"
+           role="alert" aria-live="assertive">
+        <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
+          <span class="text-sm font-bold text-white">🚫 Account Suspended</span>
+          <span class="text-xs text-red-100 sm:text-sm">
+            You can view your account, but transfers, card operations and all other actions are blocked.
+            Contact
+            <a href="mailto:compliance@trustbanque.com"
+               class="font-bold text-white underline underline-offset-2 hover:text-red-100 select-all">compliance@trustbanque.com</a>
+            to restore access.
+          </span>
+        </div>
+      </div>
+    {/if}
 
     <!-- Page content -->
     <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8 pb-24 lg:pb-8">
